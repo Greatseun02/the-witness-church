@@ -8,7 +8,8 @@ import SiteView, { type EditorView } from "@/src/components/content/SiteView";
 import type { PageId } from "@/src/lib/content/pages";
 import { watchUrl } from "@/src/lib/content/nav";
 import { resolvePinned } from "@/src/lib/content/sermons";
-import { slugify } from "@/src/lib/content/text";
+import { gameHref } from "@/src/lib/content/text";
+import { GAMES } from "@/src/lib/games/types";
 import type { SiteContent } from "@/src/lib/content/types";
 import type { SiteData } from "@/src/lib/data/types";
 
@@ -77,11 +78,31 @@ export default function PageView({
           title="Games & Bible Challenges"
           intro="Learn, compete and grow in the Word with your church family."
         />
+        <div className="max-w-5xl mx-auto px-6 md:px-12 lg:px-16 pt-12">
+          <h2 className="text-[13px] font-bold tracking-[2px] uppercase text-pink mb-4">Play now</h2>
+          <div className="grid gap-5 sm:grid-cols-2">
+            {(["quiz", "quote"] as const).map((id) => (
+              <Link
+                key={id}
+                href={`/games/${GAMES[id].slug}`}
+                className="block bg-gradient-to-br from-navy to-navy-deep text-white rounded-2xl p-6 hover:-translate-y-0.5 transition-transform"
+              >
+                <span className="block text-[20px] font-extrabold">{GAMES[id].title}</span>
+                <span className="block text-[14px] text-white/70 mt-1">
+                  {id === "quiz"
+                    ? "Multiple-choice questions on four levels. Solo or with a room of friends."
+                    : "Fill in the missing words or write the verse from memory."}
+                </span>
+                <span className="block text-[13px] font-semibold text-red-200 mt-4">Play →</span>
+              </Link>
+            ))}
+          </div>
+        </div>
         <div className="max-w-5xl mx-auto px-6 md:px-12 lg:px-16 py-12 grid gap-5 sm:grid-cols-2">
           {content.games.map((g, i) => (
             <Link
               key={`${i}-${g.title}`}
-              href={`/games/${slugify(g.title)}`}
+              href={gameHref(g.title)}
               className="flex gap-4 items-start bg-white border border-gray-2 rounded-2xl p-6 hover:border-red/40 hover:-translate-y-0.5 transition-all"
             >
               <span className="text-4xl" aria-hidden="true">{g.emoji}</span>

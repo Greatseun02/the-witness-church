@@ -237,9 +237,9 @@ export const DEFAULT_CONTENT: SiteContent = {
     },
     {
       emoji: "✏️",
-      title: "Verse Scramble",
-      description: "Unscramble Bible verses to earn devotion points and streaks",
-      badge: "⚡ Daily",
+      title: "Bible Quote",
+      description: "Fill in the missing words, or write the whole verse from memory",
+      badge: "⚡ New",
       badgeStyle: "bg-blue-400/20 text-blue-200",
     },
     {

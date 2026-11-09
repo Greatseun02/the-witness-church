@@ -1,7 +1,7 @@
 import { SectionTag, Heading, Subtext } from "@/src/components/ui/Typography";
 import Link from "next/link";
 import GameCard from "@/src/components/homeContent/cards/GameCard";
-import { slugify } from "@/src/lib/content/text";
+import { gameHref } from "@/src/lib/content/text";
 import type { Game } from "@/src/lib/content/types";
 
 export default function GamesSection({ games }: { games: Game[] }) {
@@ -35,7 +35,7 @@ export default function GamesSection({ games }: { games: Game[] }) {
           {games.map((game, i) => (
             <GameCard
               key={`${i}-${game.title}`}
-              href={`/games/${slugify(game.title)}`}
+              href={gameHref(game.title)}
               {...game}
             />
           ))}
