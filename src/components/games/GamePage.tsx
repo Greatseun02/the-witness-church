@@ -6,6 +6,7 @@ import { getContent } from "@/src/lib/content/get-content";
 import { getSiteData } from "@/src/lib/data/site-data";
 import { getRoom, poolCounts } from "@/src/lib/games/service";
 import { GAMES, type GameId } from "@/src/lib/games/types";
+import { huntStatus } from "@/src/lib/hunt/service";
 import { gamesConfigured } from "@/src/lib/supabase/service";
 
 const INTRO: Record<GameId, { tag: string; intro: string }> = {
@@ -16,6 +17,10 @@ const INTRO: Record<GameId, { tag: string; intro: string }> = {
   quote: {
     tag: "Faith & fun",
     intro: "Fill in the missing words, or write the whole verse from memory. How well do you know the Word?",
+  },
+  hunt: {
+    tag: "Treasure hunt · Game 1",
+    intro: "How well do you know The Witness Church? Reach the pass mark to win Key 1.",
   },
 };
 
@@ -32,13 +37,19 @@ export default async function GamePage({ game, code }: { game: GameId; code?: st
       </p>
     );
   } else {
-    const room = code ? await getRoom(code) : null;
+    const hunt = game === "hunt" ? await huntStatus() : null;
+    const room = code && game !== "hunt" ? await getRoom(code) : null;
     if (code && !room) notFound();
     if (room && room.game !== game) redirect(roomPath(room.game, room.code));
     const counts = await poolCounts(game);
     body = (
       <div className="max-w-5xl mx-auto px-6 md:px-12 py-10 md:py-14">
-        <GameClient game={game} counts={counts} room={room} />
+        <GameClient
+          game={game}
+          counts={counts}
+          room={room}
+          hunt={hunt ? { passMark: hunt.passMark, window: hunt.window, opensAt: hunt.opensAt, closesAt: hunt.closesAt } : null}
+        />
       </div>
     );
   }

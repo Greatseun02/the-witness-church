@@ -20,8 +20,10 @@ const UUID = /^[0-9a-f-]{36}$/i;
 const MAX_IMPORT = 500;
 
 function parseFor(game: GameId, raw: unknown) {
-  if (game === "quiz") {
-    const p = parseQuiz(raw);
+  if (game !== "quote") {
+    // Church Trivia questions have no level; store them as "medium".
+    const input = game === "hunt" && typeof raw === "object" && raw !== null ? { ...raw, difficulty: "medium" } : raw;
+    const p = parseQuiz(input);
     return p.ok ? ({ ok: true, difficulty: p.value.difficulty, payload: p.value.payload } as const) : p;
   }
   const p = parseQuote(raw);
@@ -30,9 +32,9 @@ function parseFor(game: GameId, raw: unknown) {
 
 /** Text used to spot duplicates: the question (quiz) or the reference (quote). */
 function keyOf(game: GameId, payload: QuizPayload | QuotePayload): string {
-  return game === "quiz"
-    ? (payload as QuizPayload).question.toLowerCase()
-    : (payload as QuotePayload).reference.toLowerCase();
+  return game === "quote"
+    ? (payload as QuotePayload).reference.toLowerCase()
+    : (payload as QuizPayload).question.toLowerCase();
 }
 
 export async function saveQuestion(input: {
@@ -42,7 +44,7 @@ export async function saveQuestion(input: {
 }): Promise<Result<{ row: QuestionRow }>> {
   const admin = await getAdmin();
   if (!admin) return { ok: false, error: SIGNED_OUT };
-  if (input.game !== "quiz" && input.game !== "quote") return { ok: false, error: "Unknown game." };
+  if (input.game !== "quiz" && input.game !== "quote" && input.game !== "hunt") return { ok: false, error: "Unknown game." };
   if (input.id && !UUID.test(input.id)) return { ok: false, error: "Invalid item." };
 
   const parsed = parseFor(input.game, input.data);
@@ -59,7 +61,7 @@ export async function saveQuestion(input: {
   if (clash) {
     return {
       ok: false,
-      error: input.game === "quiz" ? "That question already exists." : "That verse is already in the list.",
+      error: input.game === "quote" ? "That verse is already in the list." : "That question already exists.",
     };
   }
 
@@ -88,7 +90,7 @@ export async function importQuestions(
 ): Promise<Result<{ added: number; skipped: number }>> {
   const admin = await getAdmin();
   if (!admin) return { ok: false, error: SIGNED_OUT };
-  if (game !== "quiz" && game !== "quote") return { ok: false, error: "Unknown game." };
+  if (game !== "quiz" && game !== "quote" && game !== "hunt") return { ok: false, error: "Unknown game." };
   if (typeof text !== "string" || text.length > 2_000_000) return { ok: false, error: "That text is too large." };
 
   let list: unknown;

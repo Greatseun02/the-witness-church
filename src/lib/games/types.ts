@@ -1,11 +1,11 @@
 /** Shared by the browser and the server. Nothing here contains answers. */
 
-export type GameId = "quiz" | "quote";
+export type GameId = "quiz" | "quote" | "hunt";
 export type Level = "easy" | "medium" | "hard" | "expert";
 export type LevelChoice = Level | "all";
 export type Translation = "modern" | "kjv";
 
-export const GAME_IDS: GameId[] = ["quiz", "quote"];
+export const GAME_IDS: GameId[] = ["quiz", "quote", "hunt"];
 export const LEVELS: Level[] = ["easy", "medium", "hard", "expert"];
 export const LEVEL_CHOICES: LevelChoice[] = [...LEVELS, "all"];
 export const TRANSLATIONS: Translation[] = ["modern", "kjv"];
@@ -35,6 +35,8 @@ export const LEVEL_WEIGHT: Record<LevelChoice, number> = {
 export type GameMeta = {
   id: GameId;
   slug: string;
+  /** Public address of the game's page. */
+  path: string;
   title: string;
   /** Used in "Players" copy, e.g. "questions" / "verses". */
   unit: string;
@@ -47,6 +49,7 @@ export const GAMES: Record<GameId, GameMeta> = {
   quiz: {
     id: "quiz",
     slug: "bible-quiz",
+    path: "/games/bible-quiz",
     title: "Bible Quiz",
     unit: "questions",
     hasTranslation: false,
@@ -60,6 +63,7 @@ export const GAMES: Record<GameId, GameMeta> = {
   quote: {
     id: "quote",
     slug: "bible-quote",
+    path: "/games/bible-quote",
     title: "Bible Quote",
     unit: "verses",
     hasTranslation: true,
@@ -68,6 +72,20 @@ export const GAMES: Record<GameId, GameMeta> = {
       medium: "Fill in every missing word",
       hard: "Type the whole verse, with a hint",
       expert: "Type the whole verse from the reference alone",
+    },
+  },
+  hunt: {
+    id: "hunt",
+    slug: "church-trivia",
+    path: "/hunt/trivia",
+    title: "Church Trivia",
+    unit: "questions",
+    hasTranslation: false,
+    levelHelp: {
+      easy: "",
+      medium: "",
+      hard: "",
+      expert: "",
     },
   },
 };
@@ -164,6 +182,8 @@ export type RunSummary = {
   /** Rank on the matching leaderboard, 1-based, if the player is on it. */
   rank: number | null;
   participants: number;
+  /** Treasure hunt only: whether the pass mark was reached, and the key won. */
+  award: { passMark: number; passed: boolean; key: string | null } | null;
   review: (Feedback & { guess: Guess | null; question: PlayQuestion })[];
 };
 

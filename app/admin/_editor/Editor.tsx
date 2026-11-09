@@ -476,6 +476,10 @@ export default function Editor({
           Game content
         </a>
 
+        <a className="ed-btn ed-quiet" href="/admin/hunt" style={{ textDecoration: "none" }}>
+          Treasure hunt
+        </a>
+
         <button
           type="button"
           className="ed-btn ed-quiet"

@@ -81,3 +81,9 @@ Watch Live goes to the stream that is on air right now, as long as its title con
 4. Manage content at `/admin/games`: add, edit, hide and import questions and verses. Hidden items stay in the database so old scores keep working.
 
 Both games share one scale: Easy, Medium, Hard, Expert, plus All levels. For Bible Quote: Easy hides one word, Medium hides every blankable word, Hard asks for the whole verse with a hint, Expert asks for it from the reference alone.
+
+## Anniversary treasure hunt
+
+1. Run `supabase/migration-006-hunt.sql` in the SQL Editor (after migration-004).
+2. Manage it at `/admin/hunt`; add Church Trivia questions at `/admin/games`. Players start at `/hunt`.
+3. See DEPLOYMENT.md for the dry-run checklist and event-day notes.

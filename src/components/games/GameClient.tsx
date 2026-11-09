@@ -24,7 +24,7 @@ import MyRuns from "./MyRuns";
 import PlayRound from "./PlayRound";
 import Results from "./Results";
 import RoomTools from "./RoomTools";
-import { gamePath, loadName, rememberRun, roomPath, saveName } from "./util";
+import { gamePath, loadName, rememberRun, roomPath, saveHuntKey, saveName } from "./util";
 
 type Phase = "setup" | "play" | "results";
 type Tab = "board" | "mine" | "rooms";
@@ -36,10 +36,13 @@ export default function GameClient({
   game,
   counts,
   room,
+  hunt = null,
 }: {
   game: GameId;
   counts: Record<LevelChoice, number>;
   room: RoomInfo | null;
+  /** Church Trivia only: its fixed rules and whether it is open. */
+  hunt?: { passMark: number; window: "not-open" | "open" | "closed"; opensAt: string | null; closesAt: string | null } | null;
 }) {
   const router = useRouter();
   const meta = GAMES[game];
@@ -79,6 +82,7 @@ export default function GameClient({
 
   const done = useCallback((s: RunSummary) => {
     rememberRun(s.runId);
+    if (s.award?.key) saveHuntKey(1, s.award.key);
     setSummary(s);
     setPhase("results");
     setRefresh((n) => n + 1);
@@ -107,7 +111,7 @@ export default function GameClient({
         {error && <p role="alert" className="max-w-2xl mx-auto mt-3 text-[13px] text-red-dark">{error}</p>}
         <div className="max-w-2xl mx-auto mt-10 bg-white border border-gray-2 rounded-2xl p-5">
           <h3 className="text-[15px] font-bold text-navy mb-3">{room ? "Room leaderboard" : "Leaderboard"}</h3>
-          <Leaderboard game={game} roomCode={room?.code} highlight={summary.playerName} refreshKey={refresh} />
+          <Leaderboard game={game} roomCode={room?.code} highlight={summary.playerName} refreshKey={refresh} single={game === "hunt"} />
         </div>
       </>
     );
@@ -135,6 +139,15 @@ export default function GameClient({
           </div>
         )}
 
+        {hunt && (
+          <div className="bg-navy/5 rounded-xl p-4 mb-6 text-[13px] text-text">
+            <p className="font-bold text-navy text-[14px] mb-1">Win Key 1</p>
+            <p>Score {hunt.passMark}% or more. Everyone who passes gets the key, and you can retry if you miss.</p>
+            {hunt.window === "not-open" && <p className="mt-1 font-semibold text-red-dark">This game has not opened yet.</p>}
+            {hunt.window === "closed" && <p className="mt-1 font-semibold text-red-dark">This game has closed.</p>}
+          </div>
+        )}
+
         <label className="grid gap-1 text-[13px] font-semibold text-text mb-6">
           Your name
           <input
@@ -147,7 +160,7 @@ export default function GameClient({
           />
         </label>
 
-        {!room && (
+        {!room && game !== "hunt" && (
           <>
             <fieldset className="mb-6">
               <legend className="text-[13px] font-semibold text-text mb-2">Choose a level</legend>
@@ -205,7 +218,7 @@ export default function GameClient({
         {error && <p role="alert" className="text-[13px] text-red-dark mb-3">{error}</p>}
         <button
           onClick={() => void start()}
-          disabled={!nameOk || busy}
+          disabled={!nameOk || busy || (hunt !== null && hunt.window !== "open")}
           className="w-full bg-red text-white font-bold text-[15px] px-6 py-3.5 rounded-xl hover:bg-red-dark disabled:opacity-50 transition-colors"
         >
           {busy ? "Getting ready…" : room ? "Join this room" : "Start"}
@@ -222,7 +235,7 @@ export default function GameClient({
 
       <div className="bg-white border border-gray-2 rounded-2xl p-5 shadow-sm">
         <div className="flex gap-1 mb-4 border-b border-gray-2" role="tablist">
-          {(room ? (["board", "mine"] as const) : (["board", "mine", "rooms"] as const)).map((t) => (
+          {(room || game === "hunt" ? (["board", "mine"] as const) : (["board", "mine", "rooms"] as const)).map((t) => (
             <button
               key={t}
               role="tab"
@@ -236,7 +249,7 @@ export default function GameClient({
             </button>
           ))}
         </div>
-        {tab === "board" && <Leaderboard game={game} roomCode={room?.code} highlight={name.trim()} refreshKey={refresh} />}
+        {tab === "board" && <Leaderboard game={game} roomCode={room?.code} highlight={name.trim()} refreshKey={refresh} single={game === "hunt"} />}
         {tab === "mine" && <MyRuns game={game} refreshKey={refresh} />}
         {tab === "rooms" && <RoomTools game={game} />}
       </div>

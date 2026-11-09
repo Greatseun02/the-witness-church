@@ -16,6 +16,7 @@ export default function Leaderboard({
   roomCode,
   highlight,
   refreshKey = 0,
+  single = false,
 }: {
   game: GameId;
   /** A room board has no level tabs. */
@@ -23,6 +24,8 @@ export default function Leaderboard({
   /** The player's own name, to mark their row. */
   highlight?: string;
   refreshKey?: number;
+  /** One combined board, no level tabs. */
+  single?: boolean;
 }) {
   const [level, setLevel] = useState<LevelChoice>("all");
   const [rows, setRows] = useState<BoardRow[] | null>(null);
@@ -39,7 +42,7 @@ export default function Leaderboard({
 
   return (
     <div>
-      {!roomCode && (
+      {!roomCode && !single && (
         <div className="flex flex-wrap gap-1.5 mb-4" role="tablist" aria-label="Level">
           {LEVEL_CHOICES.map((l) => (
             <button
@@ -82,7 +85,7 @@ export default function Leaderboard({
                 </span>
                 <span className="flex-1 min-w-0">
                   <span className="block text-[14px] font-semibold text-text truncate">{r.playerName}</span>
-                  {!roomCode && (
+                  {!roomCode && !single && (
                     <span className="block text-[11px] text-muted">{LEVEL_LABEL[r.difficulty]}</span>
                   )}
                 </span>

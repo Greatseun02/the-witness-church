@@ -47,7 +47,7 @@ const blank: Draft = {
 };
 
 function toDraft(r: QuestionRow): Draft {
-  if (r.game === "quiz") {
+  if (r.game !== "quote") {
     const p = r.payload as QuizPayload;
     return {
       ...blank,
@@ -78,7 +78,7 @@ function toDraft(r: QuestionRow): Draft {
 }
 
 function toData(game: GameId, d: Draft) {
-  if (game === "quiz") {
+  if (game !== "quote") {
     return {
       question: d.question,
       options: d.options.filter((o) => o.trim()),
@@ -102,7 +102,7 @@ function toData(game: GameId, d: Draft) {
 }
 
 function titleOf(r: QuestionRow) {
-  return r.game === "quiz" ? (r.payload as QuizPayload).question : (r.payload as QuotePayload).reference;
+  return r.game === "quote" ? (r.payload as QuotePayload).reference : (r.payload as QuizPayload).question;
 }
 
 export default function GamesAdmin({ initial }: { initial: QuestionRow[] }) {
@@ -169,7 +169,7 @@ export default function GamesAdmin({ initial }: { initial: QuestionRow[] }) {
   return (
     <div>
       <div className="flex gap-2 mb-5" role="tablist">
-        {(["quiz", "quote"] as const).map((g) => (
+        {(["quiz", "quote", "hunt"] as const).map((g) => (
           <button
             key={g}
             role="tab"
@@ -216,7 +216,7 @@ export default function GamesAdmin({ initial }: { initial: QuestionRow[] }) {
             Import
           </button>
           <button onClick={() => { setDraft({ ...blank }); setImporting(false); setError(""); }} className="bg-red text-white text-[13px] font-semibold px-4 py-2 rounded-lg hover:bg-red-dark">
-            Add {game === "quiz" ? "question" : "verse"}
+            Add {game === "quote" ? "verse" : "question"}
           </button>
         </span>
       </div>
@@ -227,8 +227,8 @@ export default function GamesAdmin({ initial }: { initial: QuestionRow[] }) {
       {importing && (
         <div className="bg-white border border-gray-2 rounded-2xl p-5 mb-5">
           <p className="text-[13px] text-muted mb-2">
-            Paste a JSON list. {game === "quiz"
-              ? "Each item needs question, options, correctIndex, difficulty (easy, medium, hard, expert) and optionally reference, explanation, testament, caption. The old app's file format also works."
+            Paste a JSON list. {game !== "quote"
+              ? "Each item needs question, options, correctIndex, difficulty (easy, medium, hard, expert; ignored for Church Trivia) and optionally reference, explanation, testament, caption. The old app's file format also works."
               : "Each item needs reference, hint, funFact and translations: { modern: { text }, kjv: { text } }, with {{double braces}} around blankable words."}{" "}
             Duplicates are skipped. If any item is invalid, nothing is imported.
           </p>
@@ -247,8 +247,8 @@ export default function GamesAdmin({ initial }: { initial: QuestionRow[] }) {
           onSubmit={(e) => { e.preventDefault(); save(); }}
           className="bg-white border border-gray-2 rounded-2xl p-5 mb-5 grid gap-3"
         >
-          <h2 className="text-[16px] font-bold text-navy">{draft.id ? "Edit" : "Add"} {game === "quiz" ? "question" : "verse"}</h2>
-          {game === "quiz" ? (
+          <h2 className="text-[16px] font-bold text-navy">{draft.id ? "Edit" : "Add"} {game === "quote" ? "verse" : "question"}</h2>
+          {game !== "quote" ? (
             <>
               <label className={label}>Question
                 <textarea required rows={2} value={draft.question} onChange={(e) => set({ question: e.target.value })} className={input} />
@@ -263,11 +263,11 @@ export default function GamesAdmin({ initial }: { initial: QuestionRow[] }) {
                 ))}
               </fieldset>
               <div className="grid sm:grid-cols-3 gap-3">
-                <label className={label}>Level
+                {game === "quiz" && <label className={label}>Level
                   <select value={draft.difficulty} onChange={(e) => set({ difficulty: e.target.value })} className={input}>
                     {LEVELS.map((l) => <option key={l} value={l}>{LEVEL_LABEL[l]}</option>)}
                   </select>
-                </label>
+                </label>}
                 <label className={label}>Reference
                   <input value={draft.reference} onChange={(e) => set({ reference: e.target.value })} className={input} placeholder="Genesis 6:14" />
                 </label>
@@ -317,7 +317,7 @@ export default function GamesAdmin({ initial }: { initial: QuestionRow[] }) {
             <span className="flex-1 min-w-0">
               <span className="block text-[14px] font-semibold text-text truncate">{titleOf(r)}</span>
               <span className="block text-[12px] text-muted">
-                {r.game === "quiz" ? `${LEVEL_LABEL[r.difficulty as "easy"] ?? ""} · ${(r.payload as QuizPayload).reference}` : (r.payload as QuotePayload).hint}
+                {r.game === "quote" ? (r.payload as QuotePayload).hint : r.game === "hunt" ? (r.payload as QuizPayload).reference : `${LEVEL_LABEL[r.difficulty as "easy"] ?? ""} · ${(r.payload as QuizPayload).reference}`}
                 {!r.active ? " · hidden" : ""}
               </span>
             </span>

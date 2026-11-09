@@ -4,6 +4,7 @@
 import { createHash, randomInt } from "node:crypto";
 import { headers } from "next/headers";
 import { serviceClient } from "@/src/lib/supabase/service";
+import { getHuntConfig, huntWindow } from "@/src/lib/hunt/config";
 import {
   buildQuizQuestion,
   buildQuoteQuestion,
@@ -116,9 +117,9 @@ function questionFor(
   level: Level,
   translation: Translation,
 ): PlayQuestion {
-  return game === "quiz"
-    ? buildQuizQuestion(row.payload as QuizPayload, level)
-    : buildQuoteQuestion(row.payload as QuotePayload, level, translation);
+  return game === "quote"
+    ? buildQuoteQuestion(row.payload as QuotePayload, level, translation)
+    : buildQuizQuestion(row.payload as QuizPayload, level);
 }
 
 function gradeFor(
@@ -128,9 +129,9 @@ function gradeFor(
   translation: Translation,
   guess: Guess | null,
 ): Feedback {
-  return game === "quiz"
-    ? gradeQuiz(row.payload as QuizPayload, guess)
-    : gradeQuote(row.payload as QuotePayload, level, translation, guess);
+  return game === "quote"
+    ? gradeQuote(row.payload as QuotePayload, level, translation, guess)
+    : gradeQuiz(row.payload as QuizPayload, guess);
 }
 
 /* --------------------------------------------------------------- rooms */
@@ -153,7 +154,7 @@ export async function createRoom(input: {
 }): Promise<Result<RoomInfo>> {
   const db = serviceClient();
   if (!db) return { ok: false, error: NOT_READY };
-  if (!isGame(input.game)) return { ok: false, error: "Unknown game." };
+  if (!isGame(input.game) || input.game === "hunt") return { ok: false, error: "Unknown game." };
   const host = cleanName(input.hostName);
   if (!host) return { ok: false, error: "Enter a name for the room host (1 to 30 letters)." };
   if (!isLevelChoice(input.difficulty)) return { ok: false, error: "Pick a difficulty." };
@@ -223,6 +224,8 @@ export async function startRun(input: {
   let translation: Translation;
   let count: number;
   let room: RoomRow | null = null;
+  let attemptsLeftHunt: number | null = null;
+  let attemptNoHunt = 1;
 
   if (typeof input.roomCode === "string" && input.roomCode) {
     const { data } = await db
@@ -236,6 +239,28 @@ export async function startRun(input: {
     difficulty = room.difficulty;
     translation = room.translation;
     count = room.question_count;
+  } else if (input.game === "hunt") {
+    const hunt = await getHuntConfig();
+    if (!hunt) return { ok: false, error: NOT_READY };
+    const w = huntWindow(hunt);
+    if (w === "not-open") return { ok: false, error: "The treasure hunt has not opened yet." };
+    if (w === "closed") return { ok: false, error: "The treasure hunt trivia has closed." };
+    if (hunt.max_attempts != null) {
+      const { count: used } = await db
+        .from("game_runs")
+        .select("id", { count: "exact", head: true })
+        .eq("game", "hunt")
+        .ilike("player_name", name.replace(/[%_\\]/g, "\\$&"));
+      if ((used ?? 0) >= hunt.max_attempts) {
+        return { ok: false, error: `You have used all ${hunt.max_attempts} attempt(s).` };
+      }
+      attemptsLeftHunt = hunt.max_attempts - (used ?? 0) - 1;
+      attemptNoHunt = (used ?? 0) + 1;
+    }
+    game = "hunt";
+    difficulty = "all";
+    translation = "modern";
+    count = hunt.question_count;
   } else {
     if (!isGame(input.game)) return { ok: false, error: "Unknown game." };
     if (!isLevelChoice(input.difficulty)) return { ok: false, error: "Pick a difficulty." };
@@ -254,8 +279,8 @@ export async function startRun(input: {
     .gte("started_at", since);
   if ((recent ?? 0) >= 30) return { ok: false, error: "Slow down a little and try again in a few minutes." };
 
-  let attemptNo = 1;
-  let attemptsLeft: number | null = null;
+  let attemptNo = attemptNoHunt;
+  let attemptsLeft: number | null = attemptsLeftHunt;
   if (room) {
     const { count: used } = await db
       .from("game_runs")
@@ -281,7 +306,7 @@ export async function startRun(input: {
   const rows = pool as PoolRow[];
 
   const items: Item[] = [];
-  if (game === "quiz") {
+  if (game !== "quote") {
     for (const r of shuffle(rows).slice(0, count)) items.push({ qid: r.id, level: r.difficulty as Level });
   } else {
     let deck = shuffle(rows);
@@ -445,6 +470,18 @@ export async function finishRun(runId: unknown): Promise<Result<RunSummary>> {
   });
   const mine = board.find((b) => b.playerName.toLowerCase() === run!.player_name.toLowerCase());
 
+  // Treasure hunt: passing wins Key 1.
+  let award: RunSummary["award"] = null;
+  if (run.game === "hunt") {
+    const hunt = await getHuntConfig();
+    const passed = !!hunt && (run.percentage ?? 0) >= hunt.pass_mark;
+    award = {
+      passMark: hunt?.pass_mark ?? 70,
+      passed,
+      key: passed && hunt?.key1 ? hunt.key1 : null,
+    };
+  }
+
   return {
     ok: true,
     data: {
@@ -460,6 +497,7 @@ export async function finishRun(runId: unknown): Promise<Result<RunSummary>> {
       finishedAt: run.finished_at ?? new Date().toISOString(),
       rank: mine?.rank ?? null,
       participants: board.length,
+      award,
       review,
     },
   };
@@ -534,7 +572,7 @@ export async function leaderboard(input: {
 
 /** The browser remembers its own run ids; this returns their summaries
  *  (without the answer review). */
-export async function runsByIds(ids: unknown): Promise<Omit<RunSummary, "review" | "rank" | "participants">[]> {
+export async function runsByIds(ids: unknown): Promise<Omit<RunSummary, "review" | "rank" | "participants" | "award">[]> {
   const db = serviceClient();
   if (!db || !Array.isArray(ids)) return [];
   const clean = ids.filter((x): x is string => typeof x === "string" && /^[0-9a-f-]{36}$/i.test(x)).slice(0, 50);
