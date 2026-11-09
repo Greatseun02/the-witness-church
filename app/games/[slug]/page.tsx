@@ -11,6 +11,7 @@ export default async function GamePage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
+  if (slug === "bible-quiz-battle") redirect("/games/bible-quiz"); // old name
   const { games } = await getContent();
   if (!games.some((g) => slugify(g.title) === slug)) notFound();
   redirect("/games/coming-soon");

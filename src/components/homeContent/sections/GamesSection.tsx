@@ -1,6 +1,7 @@
 import { SectionTag, Heading, Subtext } from "@/src/components/ui/Typography";
 import Link from "next/link";
 import GameCard from "@/src/components/homeContent/cards/GameCard";
+import { listGames } from "@/src/lib/content/games-list";
 import { gameHref } from "@/src/lib/content/text";
 import type { Game } from "@/src/lib/content/types";
 
@@ -32,7 +33,7 @@ export default function GamesSection({ games }: { games: Game[] }) {
 
         {/* Grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {games.map((game, i) => (
+          {listGames(games).map((game, i) => (
             <GameCard
               key={`${i}-${game.title}`}
               href={gameHref(game.title)}

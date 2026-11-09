@@ -13,7 +13,6 @@ export function slugify(s: string): string {
  *  coming-soon page. */
 const PLAYABLE: Record<string, string> = {
   "bible-quiz": "/games/bible-quiz",
-  "bible-quiz-battle": "/games/bible-quiz",
   "bible-quote": "/games/bible-quote",
   "bible-quote-game": "/games/bible-quote",
 };

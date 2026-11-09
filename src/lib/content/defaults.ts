@@ -229,7 +229,7 @@ export const DEFAULT_CONTENT: SiteContent = {
   games: [
     {
       emoji: "📖",
-      title: "Bible Quiz Battle",
+      title: "Bible Quiz",
       description:
         "Challenge friends or go solo through Old & New Testament trivia",
       badge: "🔥 Popular",
