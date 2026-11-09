@@ -472,6 +472,10 @@ export default function Editor({
           {info.pendingPrayers > 0 && <span className="ed-count ed-count-alt">{info.pendingPrayers}</span>}
         </a>
 
+        <a className="ed-btn ed-quiet" href="/admin/games" style={{ textDecoration: "none" }}>
+          Game content
+        </a>
+
         <button
           type="button"
           className="ed-btn ed-quiet"

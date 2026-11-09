@@ -72,3 +72,12 @@ Add and pin events under the Events page in the editor. The homepage shows event
 ## Watch Live
 
 Watch Live goes to the stream that is on air right now, as long as its title contains the sermon title text (for example "The Witness Church"). The button then reads "Live now". When nothing is live it goes to the Watch Live link in Site details, or to the channel's own live page. Detecting a live stream needs the YouTube API key, which any Google account can create without owning the channel.
+
+## Bible games
+
+1. Run `supabase/migration-004-games.sql`, then `supabase/migration-005-games-seed.sql`, in the SQL Editor.
+2. Add `SUPABASE_SERVICE_ROLE_KEY` to `.env.local` and to Vercel (Project Settings > API > `service_role`). It is used only on the server. Never prefix it with `NEXT_PUBLIC_`.
+3. Play at `/games/bible-quiz` and `/games/bible-quote`. Anyone can create a room (code plus link) with its own level, size, time limit and attempt limit.
+4. Manage content at `/admin/games`: add, edit, hide and import questions and verses. Hidden items stay in the database so old scores keep working.
+
+Both games share one scale: Easy, Medium, Hard, Expert, plus All levels. For Bible Quote: Easy hides one word, Medium hides every blankable word, Hard asks for the whole verse with a hint, Expert asks for it from the reference alone.
