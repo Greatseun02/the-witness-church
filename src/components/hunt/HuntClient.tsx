@@ -11,7 +11,7 @@ import {
   unlockFoundersAction,
 } from "@/app/hunt/actions";
 import type { ChestResult, Clue, FoundersView, HuntStatus } from "@/src/lib/hunt/service";
-import { loadHuntKeys, saveHuntKey } from "@/src/components/games/util";
+import { clearHuntKeys, loadHuntKeys, saveHuntKey } from "@/src/components/games/util";
 
 type Board = Awaited<ReturnType<typeof chestBoardAction>>;
 
@@ -374,6 +374,19 @@ function HuntBody({ status, board: initialBoard }: { status: HuntStatus; board: 
           </div>
         )}
       </Step>
+
+      {(keys[1] || keys[2] || keys[3] || keys[4]) && (
+        <button
+          type="button"
+          onClick={() => {
+            clearHuntKeys();
+            window.location.reload();
+          }}
+          className="justify-self-center text-[13px] text-muted underline hover:text-navy"
+        >
+          Clear the keys saved on this device
+        </button>
+      )}
     </div>
   );
 }
